@@ -1,4 +1,4 @@
-use gpxphoto::*;
+use apacheta::*;
 use log::*;
 use simplelog::{Config, LevelFilter, TermLogger};
 use std::fs;
