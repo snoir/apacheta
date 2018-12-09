@@ -1,5 +1,5 @@
 use chrono::{DateTime, NaiveDateTime, Utc};
-use exif::{Reader, Tag};
+use gexiv2_sys;
 use gpx::read;
 use gpx::TrackSegment;
 use gpx::{Gpx, Track};
@@ -217,21 +217,27 @@ fn find_photos(
 pub fn parse_photos(dir: &Path) -> Vec<Photo> {
     let mut photos: Vec<Photo> = Vec::new();
 
+    unsafe {
+        gexiv2_sys::gexiv2_log_set_level(gexiv2_sys::GExiv2LogLevel::MUTE);
+    }
+
     for entry in fs::read_dir(dir).unwrap() {
         let img_path = entry.unwrap().path();
-        let file = File::open(&img_path).unwrap();
-        let reader = match Reader::new(&mut std::io::BufReader::new(&file)) {
-            Ok(exif) => exif,
-            Err(error) => {
-                warn!("skipping {}: {}", img_path.display(), error);
-                continue;
-            }
-        };
+        let file_metadata = rexiv2::Metadata::new_from_path(&img_path.to_str().unwrap()).unwrap();
 
-        let datetime_value = &reader.get_field(Tag::DateTime, false).unwrap().value;
-        let datetime_string = datetime_value.display_as(Tag::DateTime).to_string();
+        if !file_metadata.has_exif() {
+            warn!(
+                "skipping {}: {}",
+                img_path.display(),
+                "File doesn't contains Exif metadata"
+            );
+            continue;
+        }
+
+        let datetime_string = file_metadata.get_tag_string("Exif.Image.DateTime").unwrap();
+
         let datetime_parse =
-            match NaiveDateTime::parse_from_str(&datetime_string, "%Y-%m-%d %H:%M:%S") {
+            match NaiveDateTime::parse_from_str(&datetime_string, "%Y:%m:%d %H:%M:%S") {
                 Ok(parse_date) => parse_date,
                 Err(error) => {
                     warn!("skipping {}: {}", img_path.display(), error);
