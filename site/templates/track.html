@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ gpx_html_title }}{% endblock title %}
+{% block head%}
+  {{ super() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.3/dist/leaflet.css" integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.3.3/dist/leaflet.js" integrity="sha512-tAGcCfR4Sc5ZP5ZoVz0quoZDYX5aCtEm/eu1KhSLj2c9eFrylXZknQYmxUssFaVJKvvc0dJQixhGjG2yXWiV9Q==" crossorigin=""></script>
+{% endblock %}
+
+{% block body %}
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-sm" id="gpxinfo">
+      <h1>{{ gpx_html_title }}</h1>
+      <b> Start time: </b> {{ start_time }} <br/>
+      <b> End time: </b> {{ end_time }} <br/>
+      <b> Average latitute: </b> {{ lat_avg }} <br/>
+      <b> Average longitude: </b> {{ lon_avg }} <br/>
+    </div>
+    <div class="col-sm">
+      <div class="container-fluid" id="map" style="width: 75rem; height: 50rem;"></div>
+    </div>
+  </div>
+
+  <div class="container-fluid" id="photoalbum">
+  <div class="row">
+  {%- for photo in copied_photos %}
+    <div class="col-sm-3">
+      <a href= "../{{ photo | safe }}" class="thumbnail">
+        <img src="../{{ photo | safe }}" alt="Photo from {{ gpx_html_title }}" class="img-thumbnail">
+      </a>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+</div>
+
+<script>
+var mymap = L.map('map').setView([{{ lat_avg }}, {{ lon_avg }}], 13);
+
+L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+  maxZoom: 18,
+  attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+  '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+  'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+  id: 'mapbox.streets'
+}).addTo(mymap);
+
+var markers = [];
+
+{% for coordinate in track_coordinates %}
+markers.push(L.marker([{{ coordinate.lat }}, {{ coordinate.lon }}]));
+{%- endfor %}
+
+group = new L.featureGroup(markers);
+group.addTo(mymap);
+mymap.fitBounds(group.getBounds());
+
+var latlngs = [
+  {% for coordinate in track_coordinates %}
+  [{{ coordinate.lat }}, {{ coordinate.lon }}],
+  {%- endfor %}
+];
+var polyline = L.polyline(latlngs, {color: 'red'}).addTo(mymap);
+</script>
+{% endblock body %}

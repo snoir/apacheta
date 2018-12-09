@@ -1,0 +1,11 @@
+[site]
+base_uri = "mywebsite.net"
+name = "GPXphoto"
+proto = "http"
+description ="""This is a little static website to show you stuff about my
+trip, like GPX tracks and photos"""
+
+[data]
+gpx_input = "example/gpx_input/"
+img_input = "example/photos/"
+site_output = "example/site/"
