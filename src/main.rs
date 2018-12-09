@@ -1,14 +1,9 @@
-extern crate gpxphoto;
-extern crate simplelog;
-#[macro_use]
-extern crate tera;
-#[macro_use]
-extern crate log;
-
 use gpxphoto::*;
+use log::*;
 use simplelog::{Config, LevelFilter, TermLogger};
 use std::fs;
 use std::path::Path;
+use tera::*;
 
 fn main() {
     TermLogger::init(LevelFilter::Info, Config::default()).unwrap();

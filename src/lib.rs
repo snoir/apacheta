@@ -1,18 +1,10 @@
-extern crate chrono;
-extern crate exif;
-extern crate gpx;
-extern crate tera;
-extern crate toml;
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate serde_derive;
-
 use chrono::{DateTime, NaiveDateTime, Utc};
 use exif::{Reader, Tag};
 use gpx::read;
 use gpx::TrackSegment;
 use gpx::{Gpx, Track};
+use log::*;
+use serde_derive::{Deserialize, Serialize};
 use std::fs;
 use std::fs::File;
 use std::io;
