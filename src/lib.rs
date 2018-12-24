@@ -93,26 +93,25 @@ pub fn gpx_to_html(gpx_file: &Path, target_dir: &Path, tera: &Tera, config: &Con
 
     let gpx_name = gpx_html_title.replace(" ", "_");
 
-    let img_dir = Path::new(&config.data.img_input);
-    let dates = parse_photos(img_dir);
+    let img_input_dir = Path::new(&config.data.img_input);
+    let dates = parse_photos(img_input_dir);
     let photos = find_photos(dates, start_time, end_time);
-    let mut copied_photos: Vec<PathBuf> = Vec::new();
+    let mut copied_photos: Vec<String> = Vec::new();
+    let photo_target_dir = target_dir.join("static/photos").join(gpx_name.to_string());
+    let photo_target_dir_relative = Path::new("static/photos").join(gpx_name.to_string());
 
     match photos {
         Some(photos) => {
             let photos = photos;
 
-            fs::create_dir_all(target_dir.join("static/photos").join(gpx_name.to_string()))
-                .unwrap();
+            fs::create_dir_all(&photo_target_dir).unwrap();
+            fs::create_dir_all(&photo_target_dir.join("thumbnails")).unwrap();
 
             for (i, p) in photos.iter().enumerate() {
                 let extension = p.path.extension().unwrap().to_str().unwrap();
-                let target_path = target_dir
-                    .join("static/photos")
-                    .join(gpx_name.to_string())
-                    .join(format!("{}.{}", i + 1, extension));
+                let photo_target_file = photo_target_dir.join(format!("{}.{}", i + 1, extension));
 
-                match fs::copy(Path::new(&p.path), &target_path) {
+                match fs::copy(Path::new(&p.path), &photo_target_file) {
                     Ok(file) => file,
                     Err(error) => {
                         error!("unable to copy {}: {}", &p.path.display(), error);
@@ -120,12 +119,20 @@ pub fn gpx_to_html(gpx_file: &Path, target_dir: &Path, tera: &Tera, config: &Con
                     }
                 };
 
-                copied_photos.push(
-                    target_path
-                        .strip_prefix(&config.data.site_output)
-                        .unwrap()
-                        .to_path_buf(),
-                );
+                let img = image::open(&Path::new(&photo_target_file))
+                    .ok()
+                    .expect("Opening image failed");
+                let thumbnail = img.thumbnail(300, 300);
+
+                thumbnail
+                    .save(&photo_target_dir.join("thumbnails").join(format!(
+                        "{}.{}",
+                        i + 1,
+                        extension
+                    )))
+                    .unwrap();
+
+                copied_photos.push(format!("{}.{}", i + 1, extension));
             }
         }
         None => {
@@ -143,6 +150,7 @@ pub fn gpx_to_html(gpx_file: &Path, target_dir: &Path, tera: &Tera, config: &Con
     context.add("static_dir", "../static");
     context.add("config", config);
     context.add("copied_photos", &copied_photos);
+    context.add("photo_target_dir_relative", &photo_target_dir_relative);
 
     render_html(tera, context, &target_dir.join("tracks"), &gpx_name).unwrap();
 }

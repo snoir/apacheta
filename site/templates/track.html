@@ -26,8 +26,8 @@
   <div class="row">
   {%- for photo in copied_photos %}
     <div class="col-sm-3">
-      <a href= "../{{ photo | safe }}" class="thumbnail">
-        <img src="../{{ photo | safe }}" alt="Photo from {{ gpx_html_title }}" class="img-thumbnail">
+      <a href= "../{{ photo_target_dir_relative | safe }}/{{ photo | safe }}" class="thumbnail">
+        <img src="../{{ photo_target_dir_relative | safe }}/thumbnails/{{ photo | safe }}" alt="Photo from {{ gpx_html_title }}" class="img-thumbnail">
       </a>
     </div>
   {% endfor %}
