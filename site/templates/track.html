@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ gpx_html_title }}{% endblock title %}
+{% block title %}{{ article_title }}{% endblock title %}
 {% block head%}
   {{ super() }}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.3/dist/leaflet.css" integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ==" crossorigin=""/>
@@ -11,7 +11,7 @@
 <div class="container-fluid">
   <div class="row">
     <div class="col-sm" id="gpxinfo">
-      <h1>{{ gpx_html_title }}</h1>
+      <h1>{{ article_title }}</h1>
       <b> Start time: </b> {{ start_time }} <br/>
       <b> End time: </b> {{ end_time }} <br/>
       <b> Average latitute: </b> {{ lat_avg }} <br/>
@@ -27,7 +27,7 @@
   {%- for photo in copied_photos %}
     <div class="col-sm-3">
       <a href= "../{{ photo_target_dir_relative | safe }}/{{ photo | safe }}" class="thumbnail">
-        <img src="../{{ photo_target_dir_relative | safe }}/thumbnails/{{ photo | safe }}" alt="Photo from {{ gpx_html_title }}" class="img-thumbnail">
+        <img src="../{{ photo_target_dir_relative | safe }}/thumbnails/{{ photo | safe }}" alt="Photo from {{ article_title }}" class="img-thumbnail">
       </a>
     </div>
   {% endfor %}

@@ -46,6 +46,12 @@ pub struct Data {
     pub site_output: String,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct Article {
+    pub article_title: String,
+    pub article_underscored_title: String,
+}
+
 pub fn read_config(file: &Path) -> Result<Config, io::Error> {
     let mut config_file = File::open(file)?;
     let mut config_str = String::new();
@@ -58,7 +64,7 @@ pub fn read_config(file: &Path) -> Result<Config, io::Error> {
     }
 }
 
-pub fn gpx_to_html(gpx_file: &Path, target_dir: &Path, tera: &Tera, config: &Config) {
+pub fn gpx_to_html(gpx_file: &Path, target_dir: &Path, tera: &Tera, config: &Config) -> Article {
     let file = File::open(&gpx_file).unwrap();
     let reader = BufReader::new(file);
 
@@ -86,19 +92,22 @@ pub fn gpx_to_html(gpx_file: &Path, target_dir: &Path, tera: &Tera, config: &Con
     let start_time = segment.points.first().unwrap().time.unwrap();
     let end_time = segment.points.last().unwrap().time.unwrap();
 
-    let gpx_html_title = match gpx.metadata.unwrap().name {
+    let article_title = match gpx.metadata.unwrap().name {
         Some(name) => name,
         None => gpx_file.file_stem().unwrap().to_str().unwrap().to_string(),
     };
 
-    let gpx_name = gpx_html_title.replace(" ", "_");
+    let article_underscored_title = article_title.replace(" ", "_");
 
     let img_input_dir = Path::new(&config.data.img_input);
     let dates = parse_photos(img_input_dir);
     let photos = find_photos(dates, start_time, end_time);
     let mut copied_photos: Vec<String> = Vec::new();
-    let photo_target_dir = target_dir.join("static/photos").join(gpx_name.to_string());
-    let photo_target_dir_relative = Path::new("static/photos").join(gpx_name.to_string());
+    let photo_target_dir = target_dir
+        .join("static/photos")
+        .join(article_underscored_title.to_string());
+    let photo_target_dir_relative =
+        Path::new("static/photos").join(article_underscored_title.to_string());
 
     match photos {
         Some(photos) => {
@@ -142,7 +151,7 @@ pub fn gpx_to_html(gpx_file: &Path, target_dir: &Path, tera: &Tera, config: &Con
 
     let mut context = Context::new();
     context.add("track_coordinates", &track_coordinates);
-    context.add("gpx_html_title", &gpx_html_title);
+    context.add("article_title", &article_title);
     context.add("lon_avg", &lon_avg);
     context.add("lat_avg", &lat_avg);
     context.add("start_time", &start_time.to_string());
@@ -152,11 +161,29 @@ pub fn gpx_to_html(gpx_file: &Path, target_dir: &Path, tera: &Tera, config: &Con
     context.add("copied_photos", &copied_photos);
     context.add("photo_target_dir_relative", &photo_target_dir_relative);
 
-    render_html(tera, context, &target_dir.join("tracks"), &gpx_name).unwrap();
+    render_html(
+        tera,
+        context,
+        &target_dir.join("tracks"),
+        &article_underscored_title,
+        "track.html",
+    )
+    .unwrap();
+
+    Article {
+        article_title: article_title,
+        article_underscored_title: article_underscored_title,
+    }
 }
 
-fn render_html(tera: &Tera, context: Context, dir: &Path, file: &str) -> Result<(), io::Error> {
-    let res = tera.render("track.html", &context).unwrap();
+pub fn render_html(
+    tera: &Tera,
+    context: Context,
+    dir: &Path,
+    file: &str,
+    template: &str,
+) -> Result<(), io::Error> {
+    let res = tera.render(template, &context).unwrap();
 
     let mut generated_file = File::create(format!("{}/{}.html", dir.to_str().unwrap(), file))?;
 

@@ -1,6 +1,6 @@
 [site]
 base_uri = "mywebsite.net"
-name = "GPXphoto"
+name = "Apacheta"
 proto = "http"
 description ="""This is a little static website to show you stuff about my
 trip, like GPX tracks and photos"""

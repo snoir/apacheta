@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Index{% endblock title %}
+{% block head%}
+{{ super() }}
+{% endblock %}
+
+{% block body %}
+
+<div class="jumbotron">
+  <div class="container-fluid" id="welcome">
+    <h1 class="display-4">Welcome to {{ config.site.name }}</h1>
+    <p>{{ config.site.description }}</p>
+  </div>
+</div>
+
+<div class="album py-5 bg-light">
+  <div class="container">
+    <div class="row">
+      {%- for article in articles %}
+      <div class="col-md-4">
+	<div class="card mb-4 shadow-sm">
+	  <img class="card-img-top" src="static/photos/{{ article.article_underscored_title }}/thumbnails/1.JPG" alt="{{ article.article_title }}">
+	  <div class="card-body">
+	    <h5 class="card-title">{{ article.article_title }}</h5>
+	    <a href="tracks/{{ article.article_underscored_title }}.html" class="btn btn-primary">Voir</a>
+	  </div>
+	</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% endblock body %}
