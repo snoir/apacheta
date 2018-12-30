@@ -48,8 +48,9 @@ pub struct Data {
 
 #[derive(Serialize, Deserialize)]
 pub struct Article {
-    pub article_title: String,
-    pub article_underscored_title: String,
+    pub title: String,
+    pub underscored_title: String,
+    pub photos_number: usize,
 }
 
 pub fn read_config(file: &Path) -> Result<Config, io::Error> {
@@ -64,7 +65,12 @@ pub fn read_config(file: &Path) -> Result<Config, io::Error> {
     }
 }
 
-pub fn gpx_to_html(gpx_file: &Path, target_dir: &Path, tera: &Tera, config: &Config) -> Article {
+pub fn gpx_to_html(
+    gpx_file: &Path,
+    target_dir: &Path,
+    tera: &Tera,
+    config: &Config,
+) -> Option<Article> {
     let file = File::open(&gpx_file).unwrap();
     let reader = BufReader::new(file);
 
@@ -145,7 +151,8 @@ pub fn gpx_to_html(gpx_file: &Path, target_dir: &Path, tera: &Tera, config: &Con
             }
         }
         None => {
-            info!("No photos found for {}", gpx_file.display());
+            info!("No photos found for {}, skipping", gpx_file.display());
+            return None;
         }
     };
 
@@ -170,10 +177,11 @@ pub fn gpx_to_html(gpx_file: &Path, target_dir: &Path, tera: &Tera, config: &Con
     )
     .unwrap();
 
-    Article {
-        article_title: article_title,
-        article_underscored_title: article_underscored_title,
-    }
+    Some(Article {
+        title: article_title,
+        underscored_title: article_underscored_title,
+        photos_number: copied_photos.len(),
+    })
 }
 
 pub fn render_html(

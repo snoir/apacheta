@@ -20,7 +20,10 @@ fn main() {
         let gpx_path = entry.unwrap().path();
         if gpx_path.extension().unwrap() == "gpx" {
             info!("Processing {}", gpx_path.display());
-            articles.push(gpx_to_html(&gpx_path, target_dir, &tera, &config));
+            match gpx_to_html(&gpx_path, target_dir, &tera, &config) {
+                Some(article) => articles.push(article),
+                None => continue,
+            }
         }
     }
 
