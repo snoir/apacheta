@@ -12,7 +12,7 @@ fn main() {
     let gpx_dir = Path::new(&config.data.gpx_input);
     let target_dir = Path::new(&config.data.site_output);
 
-    let mut articles: Vec<Article> = Vec::new();
+    let mut articles: Vec<TrackArticle> = Vec::new();
 
     let tera = compile_templates!("site/templates/*");
 

@@ -47,7 +47,7 @@ pub struct Data {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Article {
+pub struct TrackArticle {
     pub title: String,
     pub underscored_title: String,
     pub photos_number: usize,
@@ -70,7 +70,7 @@ pub fn gpx_to_html(
     target_dir: &Path,
     tera: &Tera,
     config: &Config,
-) -> Option<Article> {
+) -> Option<TrackArticle> {
     let file = File::open(&gpx_file).unwrap();
     let reader = BufReader::new(file);
 
@@ -173,11 +173,11 @@ pub fn gpx_to_html(
         context,
         &target_dir.join("tracks"),
         &article_underscored_title,
-        "track.html",
+        "track_article.html",
     )
     .unwrap();
 
-    Some(Article {
+    Some(TrackArticle {
         title: article_title,
         underscored_title: article_underscored_title,
         photos_number: copied_photos.len(),
