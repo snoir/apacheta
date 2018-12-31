@@ -3,7 +3,7 @@
 {% block head%}
   {{ super() }}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.3/dist/leaflet.css" integrity="sha512-Rksm5RenBEKSKFjgI3a41vrjkw4EVPlJ3+OiI65vTjIdo9brlAacEuKOiQ5OFh7cOI1bkDwLqdLw3Zg0cRJAAQ==" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.3.3/dist/leaflet.js" integrity="sha512-tAGcCfR4Sc5ZP5ZoVz0quoZDYX5aCtEm/eu1KhSLj2c9eFrylXZknQYmxUssFaVJKvvc0dJQixhGjG2yXWiV9Q==" crossorigin=""></script>
+    <link rel="stylesheet" href="../static/vendor/ekko-lightbox.css"/>
 {% endblock %}
 
 {% block body %}
@@ -26,7 +26,7 @@
   <div class="row">
   {%- for photo in copied_photos %}
     <div class="col-sm-3">
-      <a href= "../{{ photo_target_dir_relative | safe }}/{{ photo | safe }}" class="thumbnail">
+      <a href= "../{{ photo_target_dir_relative | safe }}/{{ photo | safe }}" class="thumbnail" data-toggle="lightbox" data-gallery="{{ article_title }}" data-footer='<a href="../{{ photo_target_dir_relative | safe }}/{{ photo | safe }}" class="btn btn-primary">Source de l&apos;image</a>'>
         <img src="../{{ photo_target_dir_relative | safe }}/thumbnails/{{ photo | safe }}" alt="Photo from {{ article_title }}" class="img-thumbnail">
       </a>
     </div>
@@ -35,6 +35,10 @@
 </div>
 </div>
 
+{% endblock body %}
+{% block script %}
+<script src="../static/vendor/ekko-lightbox.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.3.3/dist/leaflet.js" integrity="sha512-tAGcCfR4Sc5ZP5ZoVz0quoZDYX5aCtEm/eu1KhSLj2c9eFrylXZknQYmxUssFaVJKvvc0dJQixhGjG2yXWiV9Q==" crossorigin=""></script>
 <script>
 var mymap = L.map('map').setView([{{ lat_avg }}, {{ lon_avg }}], 13);
 
@@ -62,5 +66,10 @@ var latlngs = [
   {%- endfor %}
 ];
 var polyline = L.polyline(latlngs, {color: 'red'}).addTo(mymap);
+
+$(document).on('click', '[data-toggle="lightbox"]', function(event) {
+  event.preventDefault();
+  $(this).ekkoLightbox();
+});
 </script>
-{% endblock body %}
+{% endblock script %}
