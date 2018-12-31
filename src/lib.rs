@@ -148,6 +148,7 @@ pub fn gpx_to_html(
                     .unwrap();
 
                 copied_photos.push(format!("{}.{}", i + 1, extension));
+                remove_exif(&photo_target_file);
             }
         }
         None => {
@@ -260,4 +261,19 @@ pub fn parse_photos(dir: &Path) -> Vec<Photo> {
     }
 
     photos
+}
+
+fn remove_exif(img_path: &Path) {
+    let file_metadata = rexiv2::Metadata::new_from_path(&img_path.to_str().unwrap()).unwrap();
+
+    if !file_metadata.has_exif() {
+        info!(
+            "skipping {}: {}",
+            img_path.display(),
+            "File doesn't contains Exif metadata"
+        );
+    } else {
+        file_metadata.clear();
+        file_metadata.save_to_file(&img_path).unwrap();
+    }
 }
