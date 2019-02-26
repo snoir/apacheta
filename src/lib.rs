@@ -4,7 +4,9 @@ use gpx::read;
 use gpx::TrackSegment;
 use gpx::{Gpx, Track};
 use log::*;
+use reqwest::Url;
 use serde_derive::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::io;
@@ -51,6 +53,12 @@ pub struct TrackArticle {
     pub title: String,
     pub underscored_title: String,
     pub photos_number: usize,
+    pub country: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ReverseGeocoding {
+    pub address: HashMap<String, String>,
 }
 
 pub fn read_config(file: &Path) -> Result<Config, io::Error> {
@@ -94,6 +102,11 @@ pub fn gpx_to_html(
 
     let mut lat_avg: f64 = track_coordinates.iter().map(|x| x.lat).sum();
     lat_avg = lat_avg / track_coordinates.len() as f64;
+
+    let coordinate_avg: Coordinate = Coordinate {
+        lon: lon_avg,
+        lat: lat_avg,
+    };
 
     let start_time = segment.points.first().unwrap().time.unwrap();
     let end_time = segment.points.last().unwrap().time.unwrap();
@@ -178,10 +191,13 @@ pub fn gpx_to_html(
     )
     .unwrap();
 
+    let track_country = &reverse_geocoding(&coordinate_avg).address["country"];
+
     Some(TrackArticle {
         title: article_title,
         underscored_title: article_underscored_title,
         photos_number: copied_photos.len(),
+        country: track_country.to_string(),
     })
 }
 
@@ -276,4 +292,23 @@ fn remove_exif(img_path: &Path) {
         file_metadata.clear();
         file_metadata.save_to_file(&img_path).unwrap();
     }
+}
+
+// Get only the country informations (zoom=0) and in French (for now)
+// Need error handling
+fn reverse_geocoding(coordinate: &Coordinate) -> ReverseGeocoding {
+    let uri = Url::parse_with_params(
+        "https://nominatim.openstreetmap.org/reverse.php",
+        &[
+            ("format", "json"),
+            ("lat", &coordinate.lat.to_string()),
+            ("lon", &coordinate.lon.to_string()),
+            ("accept-language", "fr"),
+            ("zoom", "0"),
+        ],
+    )
+    .unwrap();
+
+    let resp: ReverseGeocoding = reqwest::get(uri).unwrap().json().unwrap();
+    resp
 }
