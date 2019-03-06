@@ -4,6 +4,7 @@ use gpx::read;
 use gpx::TrackSegment;
 use gpx::{Gpx, Track};
 use log::*;
+use regex::Regex;
 use reqwest::Url;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -116,7 +117,10 @@ pub fn gpx_to_html(
         None => gpx_file.file_stem().unwrap().to_str().unwrap().to_string(),
     };
 
-    let article_underscored_title = article_title.replace(" ", "_");
+    let special_chars_re = Regex::new(r"( |/|\|<|>)").unwrap();
+    let article_underscored_title = special_chars_re
+        .replace_all(&article_title, "_")
+        .to_string();
 
     let img_input_dir = Path::new(&config.data.img_input);
     let dates = parse_photos(img_input_dir);
