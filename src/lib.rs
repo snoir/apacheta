@@ -55,9 +55,10 @@ pub struct TrackArticle {
     pub underscored_title: String,
     pub photos_number: usize,
     pub country: String,
+    pub datetime: DateTime<Utc>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct ReverseGeocoding {
     pub address: HashMap<String, String>,
 }
@@ -202,6 +203,7 @@ pub fn gpx_to_html(
         underscored_title: article_underscored_title,
         photos_number: copied_photos.len(),
         country: track_country.to_string(),
+        datetime: start_time,
     })
 }
 

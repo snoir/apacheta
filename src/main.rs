@@ -27,6 +27,8 @@ fn main() {
         }
     }
 
+    articles.sort_by(|a, b| a.datetime.cmp(&b.datetime));
+
     let mut index_context = Context::new();
     index_context.add("config", &config);
     index_context.add("static_dir", "static");
