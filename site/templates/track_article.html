@@ -26,7 +26,7 @@
   <div class="row">
   {%- for photo in copied_photos %}
     <div class="col-sm-3">
-      <a href= "../{{ photo_target_dir_relative | safe }}/{{ photo | safe }}" class="thumbnail" data-toggle="lightbox" data-gallery="{{ article_title }}" data-footer='<a href="../{{ photo_target_dir_relative | safe }}/{{ photo | safe }}" class="btn btn-primary">Source de l&apos;image</a>'>
+      <a href= "../{{ photo_target_dir_relative | safe }}/{{ photo | safe }}" class="thumbnail" data-toggle="lightbox" data-gallery="{{ article_title }}" data-footer='<a href="../{{ photo_target_dir_relative | safe }}/{{ photo | safe }}" class="btn btn-primary">Voir en grand</a>'>
         <img src="../{{ photo_target_dir_relative | safe }}/thumbnails/{{ photo | safe }}" alt="Photo from {{ article_title }}" class="img-thumbnail">
       </a>
     </div>
