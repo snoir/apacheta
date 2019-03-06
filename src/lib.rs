@@ -15,7 +15,7 @@ use std::io::prelude::*;
 use std::io::BufReader;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
-use tera::{Context, Tera};
+use tera::{compile_templates, Context, Tera};
 
 #[derive(Serialize)]
 struct Coordinate {
@@ -75,11 +75,37 @@ pub fn read_config(file: &Path) -> Result<Config, io::Error> {
     }
 }
 
+pub fn process_gpx_dir(config: &Config) -> Vec<TrackArticle> {
+    let gpx_dir = Path::new(&config.data.gpx_input);
+    let target_dir = Path::new(&config.data.site_output);
+
+    let mut articles: Vec<TrackArticle> = Vec::new();
+
+    let tera = compile_templates!("site/templates/*");
+    let img_input_dir = Path::new(&config.data.img_input);
+    let photo_all = parse_photos(img_input_dir);
+
+    for entry in fs::read_dir(gpx_dir).unwrap() {
+        let gpx_path = entry.unwrap().path();
+        if gpx_path.extension().unwrap() == "gpx" {
+            info!("Processing {}", gpx_path.display());
+            match gpx_to_html(&gpx_path, target_dir, &tera, &config, &photo_all) {
+                Some(article) => articles.push(article),
+                None => continue,
+            }
+        }
+    }
+
+    articles.sort_by(|a, b| a.datetime.cmp(&b.datetime));
+    articles
+}
+
 pub fn gpx_to_html(
     gpx_file: &Path,
     target_dir: &Path,
     tera: &Tera,
     config: &Config,
+    photo_list: &Vec<Photo>,
 ) -> Option<TrackArticle> {
     let file = File::open(&gpx_file).unwrap();
     let reader = BufReader::new(file);
@@ -123,9 +149,7 @@ pub fn gpx_to_html(
         .replace_all(&article_title, "_")
         .to_string();
 
-    let img_input_dir = Path::new(&config.data.img_input);
-    let dates = parse_photos(img_input_dir);
-    let photos = find_photos(dates, start_time, end_time);
+    let photo_article = find_photos(photo_list, start_time, end_time);
     let mut copied_photos: Vec<String> = Vec::new();
     let photo_target_dir = target_dir
         .join("static/photos")
@@ -133,9 +157,9 @@ pub fn gpx_to_html(
     let photo_target_dir_relative =
         Path::new("static/photos").join(article_underscored_title.to_string());
 
-    match photos {
-        Some(photos) => {
-            let photos = photos;
+    match photo_article {
+        Some(photo_article) => {
+            let photos = photo_article;
 
             fs::create_dir_all(&photo_target_dir).unwrap();
             fs::create_dir_all(&photo_target_dir.join("thumbnails")).unwrap();
@@ -223,11 +247,11 @@ pub fn render_html(
 }
 
 fn find_photos(
-    photos: Vec<Photo>,
+    photos: &Vec<Photo>,
     start_time: DateTime<Utc>,
     end_time: DateTime<Utc>,
-) -> Option<Vec<Photo>> {
-    let mut res: Vec<Photo> = Vec::new();
+) -> Option<Vec<&Photo>> {
+    let mut res: Vec<&Photo> = Vec::new();
 
     for p in photos {
         if start_time.timestamp() <= p.datetime.timestamp()
