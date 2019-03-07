@@ -330,6 +330,18 @@ pub fn parse_photos(dir: &Path) -> Vec<Photo> {
     photos
 }
 
+pub fn generate_index(config: &Config, articles: Vec<TrackArticle>) {
+    let target_dir = Path::new(&config.data.site_output);
+    let tera = compile_templates!("site/templates/*");
+    let mut index_context = Context::new();
+
+    index_context.add("config", &config);
+    index_context.add("static_dir", "static");
+    index_context.add("articles", &articles);
+
+    render_html(&tera, index_context, &target_dir, "index", "index.html").unwrap();
+}
+
 fn remove_exif(img_path: &Path) {
     let file_metadata = rexiv2::Metadata::new_from_path(&img_path.to_str().unwrap()).unwrap();
 
