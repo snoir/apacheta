@@ -17,8 +17,8 @@ use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
 use tera::{compile_templates, Context, Tera};
 
-#[derive(Serialize)]
-struct Coordinate {
+#[derive(Serialize, Deserialize)]
+pub struct Coordinate {
     lon: f64,
     lat: f64,
 }
@@ -55,7 +55,9 @@ pub struct TrackArticle {
     pub underscored_title: String,
     pub photos_number: usize,
     pub country: String,
-    pub datetime: DateTime<Utc>,
+    pub start_time: DateTime<Utc>,
+    pub end_time: DateTime<Utc>,
+    pub coordinate_avg: Coordinate,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -96,17 +98,11 @@ pub fn process_gpx_dir(config: &Config) -> Vec<TrackArticle> {
         }
     }
 
-    articles.sort_by(|a, b| a.datetime.cmp(&b.datetime));
+    articles.sort_by(|a, b| a.start_time.cmp(&b.start_time));
     articles
 }
 
-pub fn gpx_to_html(
-    gpx_file: &Path,
-    target_dir: &Path,
-    tera: &Tera,
-    config: &Config,
-    photo_list: &Vec<Photo>,
-) -> Option<TrackArticle> {
+pub fn article_gpx_info(gpx_file: &Path) -> (TrackArticle, Vec<Coordinate>) {
     let file = File::open(&gpx_file).unwrap();
     let reader = BufReader::new(file);
 
@@ -149,13 +145,36 @@ pub fn gpx_to_html(
         .replace_all(&article_title, "_")
         .to_string();
 
-    let photo_article = find_photos(photo_list, start_time, end_time);
+    (
+        TrackArticle {
+            title: article_title,
+            underscored_title: article_underscored_title,
+            photos_number: 0,
+            country: String::new(),
+            start_time: start_time,
+            end_time: end_time,
+            coordinate_avg: coordinate_avg,
+        },
+        track_coordinates,
+    )
+}
+
+pub fn gpx_to_html(
+    gpx_file: &Path,
+    target_dir: &Path,
+    tera: &Tera,
+    config: &Config,
+    photo_list: &Vec<Photo>,
+) -> Option<TrackArticle> {
+    let (article_info, track_coordinates) = article_gpx_info(gpx_file);
+
+    let photo_article = find_photos(photo_list, article_info.start_time, article_info.end_time);
     let mut copied_photos: Vec<String> = Vec::new();
     let photo_target_dir = target_dir
         .join("static/photos")
-        .join(article_underscored_title.to_string());
+        .join(article_info.underscored_title.to_string());
     let photo_target_dir_relative =
-        Path::new("static/photos").join(article_underscored_title.to_string());
+        Path::new("static/photos").join(article_info.underscored_title.to_string());
 
     match photo_article {
         Some(photo_article) => {
@@ -201,11 +220,11 @@ pub fn gpx_to_html(
 
     let mut context = Context::new();
     context.add("track_coordinates", &track_coordinates);
-    context.add("article_title", &article_title);
-    context.add("lon_avg", &lon_avg);
-    context.add("lat_avg", &lat_avg);
-    context.add("start_time", &start_time.to_string());
-    context.add("end_time", &end_time.to_string());
+    context.add("article_title", &article_info.title);
+    context.add("lon_avg", &article_info.coordinate_avg.lon);
+    context.add("lat_avg", &article_info.coordinate_avg.lat);
+    context.add("start_time", &article_info.start_time.to_string());
+    context.add("end_time", &article_info.end_time.to_string());
     context.add("static_dir", "../static");
     context.add("config", config);
     context.add("copied_photos", &copied_photos);
@@ -215,19 +234,21 @@ pub fn gpx_to_html(
         tera,
         context,
         &target_dir.join("tracks"),
-        &article_underscored_title,
+        &article_info.underscored_title,
         "track_article.html",
     )
     .unwrap();
 
-    let track_country = &reverse_geocoding(&coordinate_avg).address["country"];
+    let track_country = &reverse_geocoding(&article_info.coordinate_avg).address["country"];
 
     Some(TrackArticle {
-        title: article_title,
-        underscored_title: article_underscored_title,
+        title: article_info.title,
+        underscored_title: article_info.underscored_title,
         photos_number: copied_photos.len(),
         country: track_country.to_string(),
-        datetime: start_time,
+        start_time: article_info.start_time,
+        end_time: article_info.end_time,
+        coordinate_avg: article_info.coordinate_avg,
     })
 }
 
