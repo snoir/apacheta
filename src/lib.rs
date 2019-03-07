@@ -91,7 +91,7 @@ pub fn process_gpx_dir(config: &Config) -> Vec<TrackArticle> {
         let gpx_path = entry.unwrap().path();
         if gpx_path.extension().unwrap() == "gpx" {
             info!("Processing {}", gpx_path.display());
-            match gpx_to_html(&gpx_path, target_dir, &tera, &config, &photo_all) {
+            match generate_article(&gpx_path, target_dir, &tera, &config, &photo_all) {
                 Some(article) => articles.push(article),
                 None => continue,
             }
@@ -159,7 +159,7 @@ pub fn article_gpx_info(gpx_file: &Path) -> (TrackArticle, Vec<Coordinate>) {
     )
 }
 
-pub fn gpx_to_html(
+pub fn generate_article(
     gpx_file: &Path,
     target_dir: &Path,
     tera: &Tera,
