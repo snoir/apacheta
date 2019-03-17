@@ -8,6 +8,7 @@ use regex::Regex;
 use reqwest::Url;
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::error;
 use std::fs;
 use std::fs::File;
 use std::io;
@@ -239,7 +240,13 @@ pub fn generate_article(
     )
     .unwrap();
 
-    let track_country = &reverse_geocoding(&article_info.coordinate_avg).address["country"];
+    let track_country = match reverse_geocoding(&article_info.coordinate_avg) {
+        Ok(geocoding) => geocoding.address["country"].clone(),
+        Err(error) => {
+            error!("error while reverse geocoding : {}", error);
+            String::new()
+        }
+    };
 
     Some(TrackArticle {
         title: article_info.title,
@@ -359,7 +366,7 @@ fn remove_exif(img_path: &Path) {
 
 // Get only the country informations (zoom=0) and in French (for now)
 // Need error handling
-fn reverse_geocoding(coordinate: &Coordinate) -> ReverseGeocoding {
+fn reverse_geocoding(coordinate: &Coordinate) -> Result<ReverseGeocoding, Box<error::Error>> {
     let uri = Url::parse_with_params(
         "https://nominatim.openstreetmap.org/reverse.php",
         &[
@@ -369,9 +376,8 @@ fn reverse_geocoding(coordinate: &Coordinate) -> ReverseGeocoding {
             ("accept-language", "fr"),
             ("zoom", "0"),
         ],
-    )
-    .unwrap();
+    )?;
 
-    let resp: ReverseGeocoding = reqwest::get(uri).unwrap().json().unwrap();
-    resp
+    let resp: ReverseGeocoding = reqwest::get(uri)?.json().unwrap();
+    Ok(resp)
 }
