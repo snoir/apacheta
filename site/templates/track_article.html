@@ -52,9 +52,8 @@ L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=p
 
 var markers = [];
 
-{% for coordinate in track_coordinates %}
-markers.push(L.marker([{{ coordinate.lat }}, {{ coordinate.lon }}]));
-{%- endfor %}
+markers.push(L.marker([{{ track_coordinates | first | get(key="lat") }}, {{ track_coordinates | first | get(key="lon")}}]));
+markers.push(L.marker([{{ track_coordinates | last | get(key="lat") }}, {{ track_coordinates | last | get(key="lon")}}]));
 
 group = new L.featureGroup(markers);
 group.addTo(mymap);
